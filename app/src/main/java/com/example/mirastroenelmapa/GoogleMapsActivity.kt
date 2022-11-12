@@ -32,9 +32,23 @@ class GoogleMapsActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
-        // Add a marker in Sydney and move the camera
-        val sydney = LatLng(-34.0, 151.0)
-        mMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
+        mMap.setInfoWindowAdapter(CustomInfoWindowAdapter(this))
+
+        //Marcador
+        //Tachuela roja que se posiciona en el mapa donde quieren ubicarse
+        /*mMap.addMarker(MarkerOptions()
+            .title("Salar de Uyuni")
+            .snippet("${salarUyuni.latitude},${salarUyuni.longitude}") //Contenido extra
+            .position(salarUyuni)
+        )*/
+
+        mMap.uiSettings.apply {
+            isZoomControlsEnabled = true // Botones + - zoom in zoom out
+            isCompassEnabled = true // la brújula de orientación del mapa
+            isMapToolbarEnabled = true // habilito para un marcador la opción de ir a ver una ruta a verlo en la app Mapa Google
+            isRotateGesturesEnabled = false // deshabilitar la opción de rotación del mapa
+            isTiltGesturesEnabled = false // deshabilitar la opción de rotación de la cámara
+            isZoomControlsEnabled = false // deshabilita las opciones de zoom con los dedos del mapa
+        }
     }
 }
