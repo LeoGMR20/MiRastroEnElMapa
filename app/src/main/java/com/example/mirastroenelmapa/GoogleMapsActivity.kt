@@ -1,16 +1,21 @@
 package com.example.mirastroenelmapa
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Location
 import android.location.LocationManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Looper
 import android.provider.Settings
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.mirastroenelmapa.Constantes.INTERVAL_TIME
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -19,7 +24,7 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.example.mirastroenelmapa.databinding.ActivityGoogleMapsBinding
-import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.*
 
 class GoogleMapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
@@ -39,11 +44,6 @@ class GoogleMapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private var latitud: Double = 0.0
     private var longitud: Double = 0.0
-    private var distance: Double = 0.0
-    private var acumulateDistance: Double = 0.0
-    private var velocity: Double = 0.0
-    private var contador = 0
-
     private lateinit var mMap: GoogleMap
     private lateinit var binding: ActivityGoogleMapsBinding
 
@@ -59,7 +59,7 @@ class GoogleMapsActivity : AppCompatActivity(), OnMapReadyCallback {
         mapFragment.getMapAsync(this)
 
         binding.btnHabilitarGPS.setOnClickListener {
-
+            enableGPSServices()
         }
         binding.btnHabilitarCoor.setOnClickListener {
 
@@ -98,19 +98,20 @@ class GoogleMapsActivity : AppCompatActivity(), OnMapReadyCallback {
      *
      * GPS
      *
+     *
      */
 
     private fun enableGPSServices() {
         if(!hasGPSEnabed()){
             AlertDialog.Builder(this)
-                .setTitle(com.google.android.gms.location.R.string.alert_dialog_title)
-                .setMessage(com.google.android.gms.location.R.string.alert_dialog_description)
+                .setTitle(R.string.alert_dialog_title)
+                .setMessage(R.string.alert_dialog_description)
                 .setPositiveButton(
-                    com.google.android.gms.location.R.string.alert_dialog_button_accept,
+                    R.string.alert_dialog_button_accept,
                     DialogInterface.OnClickListener{
                             dialog, wich -> goToEnableGPS()
                     })
-                .setNegativeButton(com.google.android.gms.location.R.string.alert_dialog_button_denny) {
+                .setNegativeButton(R.string.alert_dialog_button_denny) {
                         dialog, wich -> isGPSEnabled = false
                 }
                 .setCancelable(true)
@@ -142,5 +143,53 @@ class GoogleMapsActivity : AppCompatActivity(), OnMapReadyCallback {
      *
      * Coordenadas
      *
+     *
      * */
+
+    @SuppressLint("MissingPermission")
+    private fun manageLocation() {
+        if (hasGPSEnabed()){
+            if (allPermissionsGrantedGPS()) {
+                //solo puede ser tratado si el usuario dio permisos
+                fusedLocation = LocationServices.getFusedLocationProviderClient(this)
+                //Estan configurando un evento que escuche cuando
+                // del sensor GPS se captura datos correctamente
+                fusedLocation.lastLocation.addOnSuccessListener {
+                        location -> requestNewLocationData()
+                }
+            }else{
+                requestPermissionsLocation()
+            }
+        }else{
+            goToEnableGPS()
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun requestNewLocationData() {
+        //configurar las caracteristicas de nuestra peticion de localizacion
+        //Version 21 y su nueva manera de configurar un request
+        var myLocationRequest = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            INTERVAL_TIME
+        ).setMaxUpdates(50).build()
+        fusedLocation.requestLocationUpdates(myLocationRequest, myLocationCallback, Looper.myLooper())
+    }
+
+    private fun requestPermissionsLocation() {
+        ActivityCompat.requestPermissions(this, REQUIERED_PERMISSION_GPS, PERMISSION_ID)
+    }
+
+    private val myLocationCallback = object : LocationCallback() {
+        override fun onLocationResult(locationResult: LocationResult) {
+            var myLastLocation: Location? = locationResult.lastLocation
+            if(myLastLocation != null) {
+                var lastLatitude = myLastLocation.latitude
+                var lastLongitude = myLastLocation.longitude
+
+                latitud = myLastLocation.latitude
+                longitud = myLastLocation.longitude
+            }
+        }
+    }
 }
