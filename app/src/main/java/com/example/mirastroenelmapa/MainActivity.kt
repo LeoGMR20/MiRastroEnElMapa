@@ -1,9 +1,14 @@
 package com.example.mirastroenelmapa
 
+import android.annotation.SuppressLint
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Looper
 import com.example.mirastroenelmapa.databinding.ActivityMainBinding
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 
 class MainActivity : AppCompatActivity() {
     companion object {
@@ -33,4 +38,36 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
     }
+
+    /*@SuppressLint("MissingPermission")
+    private fun manageLocation() {
+        if (hasGPSEnabed()){
+            if (allPermissionsGrantedGPS()) {
+                //solo puede ser tratado si el usuario dio permisos
+                fusedLocation = LocationServices.getFusedLocationProviderClient(this)
+                //Estan configurando un evento que escuche cuando
+                // del sensor GPS se captura datos correctamente
+                fusedLocation.lastLocation.addOnSuccessListener {
+                        location -> requestNewLocationData()
+                }
+            }else{
+                requestPermissionsLocation()
+            }
+        }else{
+            goToEnableGPS()
+        }
+    }
+
+    //OJO: solo usar si estas completamente seguro de que en este punto
+    //garantizas al 100% que el usuario ha dado permisos
+    @SuppressLint("MissingPermission")
+    private fun requestNewLocationData() {
+        //configurar las caracteristicas de nuestra peticion de localizacion
+        //Version 21 y su nueva manera de configurar un request
+        var myLocationRequest = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            INTERVAL_TIME
+        ).setMaxUpdates(50).build()
+        fusedLocation.requestLocationUpdates(myLocationRequest, myLocationCallback, Looper.myLooper())
+    }*/
 }
