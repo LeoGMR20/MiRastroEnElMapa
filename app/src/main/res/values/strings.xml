@@ -24,4 +24,6 @@
     <string name="txt_maps">Botón para ir al mapa</string>
     <string name="txt_permission_map">Botón para habilitar permisos de google maps</string>
     <string name="todo">TODO</string>
+    <string name="btn_habilitar_gps">Habilitar GPS</string>
+    <string name="btn_habilitar_coordenadas">Habilitar coordenadas</string>
 </resources>
