@@ -51,13 +51,12 @@ class GoogleMapsActivity : AppCompatActivity(), OnMapReadyCallback,
     private var contador: Int = 0
     private var latitud: Double = 0.0
     private var longitud: Double = 0.0
-    private lateinit var misRutas: MutableList<LatLng>
+    val misRutas = mutableListOf<LatLng>()
     private lateinit var mMap: GoogleMap
     private lateinit var binding: ActivityGoogleMapsBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         binding = ActivityGoogleMapsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -73,7 +72,14 @@ class GoogleMapsActivity : AppCompatActivity(), OnMapReadyCallback,
             manageLocation()
         }
         binding.btnRecorrido.setOnClickListener {
-            setupPolyline(misRutas)
+            if(contador > 0) {
+                try {
+                    setupPolyline(misRutas)
+                } catch (e: Exception) {
+                    Toast.makeText(this, e.message, Toast.LENGTH_LONG).show()
+                }
+            }
+            else Toast.makeText(this, "Debes tener al menos más de una posición registrada", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -81,13 +87,9 @@ class GoogleMapsActivity : AppCompatActivity(), OnMapReadyCallback,
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
-
         mMap.setInfoWindowAdapter(CustomInfoWindowAdapter(this))
 
-        mMap.apply {
-            setMinZoomPreference(13f)
-            setMaxZoomPreference(20f)
-        }
+        mMap.setMinZoomPreference(13f)
 
         //Marcador
         //Tachuela roja que se posiciona en el mapa donde quieren ubicarse
@@ -227,17 +229,16 @@ class GoogleMapsActivity : AppCompatActivity(), OnMapReadyCallback,
             if(myLastLocation != null) {
                 var lastLatitude = myLastLocation.latitude
                 var lastLongitude = myLastLocation.longitude
-
-                if(contador > 0) {
-                    binding.apply {
-                        mMap.addMarker(MarkerOptions()
-                            .title("Ubicación ${contador}")
-                            .snippet("${lastLatitude},${lastLongitude}")
-                            .position(LatLng(lastLatitude,lastLongitude))
-                        )
-                    }
-                    misRutas.add(LatLng(lastLatitude,lastLongitude))
+                var pos = LatLng(lastLatitude, lastLongitude)
+                mMap.addMarker(MarkerOptions()
+                    .position(pos)
+                    .title("Ubicación ${contador}")
+                    .snippet("${pos.latitude},\n${pos.longitude}")
+                )?.run {
+                    setIcon(BitmapDescriptorFactory.fromResource(R.drawable.marker))
                 }
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(pos,20f))
+                misRutas.add(pos)
 
                 latitud = myLastLocation.latitude
                 longitud = myLastLocation.longitude
@@ -264,6 +265,7 @@ class GoogleMapsActivity : AppCompatActivity(), OnMapReadyCallback,
             for (punto in ruta){
                 misRutasEnTiempoReal.add(punto)
                 polyline.points = misRutasEnTiempoReal
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(punto,20f))
                 delay(2_000)
             }
         }
