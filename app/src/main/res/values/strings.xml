@@ -26,4 +26,5 @@
     <string name="todo">TODO</string>
     <string name="btn_habilitar_gps">Habilitar GPS</string>
     <string name="btn_habilitar_coordenadas">Habilitar coordenadas</string>
+    <string name="btn_recorrido">Recorrido</string>
 </resources>

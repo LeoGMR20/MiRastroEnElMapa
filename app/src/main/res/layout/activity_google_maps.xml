@@ -38,7 +38,17 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:minWidth="0dp"
-            android:text="@string/btn_hibrido"
+            android:text="@string/btn_habilitar_coordenadas"
+            android:textColor="@color/white"
+            android:textAppearance="?attr/textAppearanceCaption"
+            style="?attr/materialButtonOutlinedStyle"/>
+
+        <Button
+            android:id="@+id/btn_recorrido"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp"
+            android:text="@string/btn_recorrido"
             android:textColor="@color/white"
             android:textAppearance="?attr/textAppearanceCaption"
             style="?attr/materialButtonOutlinedStyle"/>

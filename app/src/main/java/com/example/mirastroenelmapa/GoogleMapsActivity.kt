@@ -5,28 +5,34 @@ import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.location.Location
 import android.location.LocationManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Looper
 import android.provider.Settings
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.example.mirastroenelmapa.Constantes.INTERVAL_TIME
+import com.example.mirastroenelmapa.Constantes.lapaz
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
 import com.example.mirastroenelmapa.databinding.ActivityGoogleMapsBinding
 import com.google.android.gms.location.*
+import com.google.android.gms.maps.model.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
-class GoogleMapsActivity : AppCompatActivity(), OnMapReadyCallback {
+class GoogleMapsActivity : AppCompatActivity(), OnMapReadyCallback,
+    GoogleMap.OnMarkerClickListener{
 
     companion object {
         val REQUIERED_PERMISSION_GPS = arrayOf(
@@ -42,8 +48,10 @@ class GoogleMapsActivity : AppCompatActivity(), OnMapReadyCallback {
     //FusedLocation: fusionar los datos respectivos a GPS en un objeto
     private lateinit var fusedLocation : FusedLocationProviderClient
 
+    private var contador: Int = 0
     private var latitud: Double = 0.0
     private var longitud: Double = 0.0
+    private lateinit var misRutas: MutableList<LatLng>
     private lateinit var mMap: GoogleMap
     private lateinit var binding: ActivityGoogleMapsBinding
 
@@ -62,7 +70,10 @@ class GoogleMapsActivity : AppCompatActivity(), OnMapReadyCallback {
             enableGPSServices()
         }
         binding.btnHabilitarCoor.setOnClickListener {
-
+            manageLocation()
+        }
+        binding.btnRecorrido.setOnClickListener {
+            setupPolyline(misRutas)
         }
     }
 
@@ -70,7 +81,13 @@ class GoogleMapsActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
+
         mMap.setInfoWindowAdapter(CustomInfoWindowAdapter(this))
+
+        mMap.apply {
+            setMinZoomPreference(13f)
+            setMaxZoomPreference(20f)
+        }
 
         //Marcador
         //Tachuela roja que se posiciona en el mapa donde quieren ubicarse
@@ -88,8 +105,34 @@ class GoogleMapsActivity : AppCompatActivity(), OnMapReadyCallback {
             isTiltGesturesEnabled = false // deshabilitar la opción de rotación de la cámara
             isZoomControlsEnabled = false // deshabilita las opciones de zoom con los dedos del mapa
         }
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(lapaz,10f))
+
+        mMap.setPadding(0,0,0,Utils.dp(64))// densidad de pixeles en pantalla
+
+        /**
+         * Estilo personalizado de mapa
+         */
+
+        mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.my_map_style))
+
+        mMap.setOnMarkerClickListener(this)
+        mMap.setOnMapClickListener {
+            //it es la posición donde haces click con tu dedo
+            mMap.addMarker(MarkerOptions()
+                .title("Nueva ubicación Random")
+                .snippet("${it.latitude},\n${it.longitude}")
+                .position(it)
+                .draggable(true)
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker))
+            )
+        }
     }
 
+    override fun onMarkerClick(marker: Marker): Boolean {
+        //marker es el marcador al que le estas haciendo click
+        Toast.makeText(this, "${marker.position.latitude}, ${marker.position.longitude}", Toast.LENGTH_LONG).show()
+        return false
+    }
 
     //HABILITAR PERMISOS DE GPS Y COORDENADAS
 
@@ -167,11 +210,9 @@ class GoogleMapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     @SuppressLint("MissingPermission")
     private fun requestNewLocationData() {
-        //configurar las caracteristicas de nuestra peticion de localizacion
-        //Version 21 y su nueva manera de configurar un request
         var myLocationRequest = LocationRequest.Builder(
             Priority.PRIORITY_HIGH_ACCURACY,
-            INTERVAL_TIME
+            INTERVAL_TIME//10 segundos = 10000 milisegundos
         ).setMaxUpdates(50).build()
         fusedLocation.requestLocationUpdates(myLocationRequest, myLocationCallback, Looper.myLooper())
     }
@@ -187,8 +228,43 @@ class GoogleMapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 var lastLatitude = myLastLocation.latitude
                 var lastLongitude = myLastLocation.longitude
 
+                if(contador > 0) {
+                    binding.apply {
+                        mMap.addMarker(MarkerOptions()
+                            .title("Ubicación ${contador}")
+                            .snippet("${lastLatitude},${lastLongitude}")
+                            .position(LatLng(lastLatitude,lastLongitude))
+                        )
+                    }
+                    misRutas.add(LatLng(lastLatitude,lastLongitude))
+                }
+
                 latitud = myLastLocation.latitude
                 longitud = myLastLocation.longitude
+                contador++
+            }
+        }
+    }
+
+    //Polylines
+
+    private fun setupPolyline(ruta: MutableList<LatLng>) {
+        //las líneas Polyline dependen de un arreglo o lista de coordenadas
+        val polyline = mMap.addPolyline(
+            PolylineOptions()
+            .color(Color.BLUE)
+            .width(10f) //ancho de la línea
+            .clickable(true) //la línea debe ser clickeada
+            .geodesic(true) //curvatura con respecto al radio de la tierra
+        )
+        polyline.points = ruta
+
+        lifecycleScope.launch{
+            val misRutasEnTiempoReal = mutableListOf<LatLng>()
+            for (punto in ruta){
+                misRutasEnTiempoReal.add(punto)
+                polyline.points = misRutasEnTiempoReal
+                delay(2_000)
             }
         }
     }
